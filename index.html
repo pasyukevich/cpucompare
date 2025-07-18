@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CPU Profile Comparator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Custom styles for flame graph */
+      .flame-graph-container {
+        font-family: 'Courier New', monospace;
+      }
+      
+      .flame-graph-container .d3-flame-graph rect {
+        stroke: #fff;
+        stroke-width: 0.5px;
+      }
+      
+      .flame-graph-container .d3-flame-graph text {
+        font-size: 12px;
+        fill: #000;
+        text-anchor: middle;
+        dominant-baseline: middle;
+        pointer-events: none;
+      }
+      
+      .flame-graph-container .d3-flame-graph .d3-flame-graph-label {
+        font-size: 11px;
+        fill: #000;
+        text-anchor: start;
+        dominant-baseline: middle;
+        pointer-events: none;
+      }
+      
+      .flame-graph-container .d3-flame-graph .zoom {
+        cursor: pointer;
+      }
+      
+      .flame-graph-container .d3-flame-graph .zoom:hover {
+        stroke: #474747;
+        stroke-width: 2px;
+      }
+      
+      .flame-graph-container .d3-flame-graph .zoom rect {
+        fill: #eeeeee;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html> 
