@@ -52,46 +52,83 @@ export default function App() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">CPU Profile Comparator</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <FileUploader onUpload={(file) => handleUpload(file, 'left')} label="Upload Left Profile" />
-          {leftProfile && (
-            <div className="mt-4 p-4 bg-gray-50 rounded">
-              <h3 className="font-semibold text-gray-700">Profile Statistics</h3>
-              <p className="text-sm text-gray-600">Total Duration: {leftProfile.totalDuration.toFixed(2)}ms</p>
-              <p className="text-sm text-gray-600">Functions: {leftProfile.functions.length}</p>
-            </div>
-          )}
-        </div>
-        
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <FileUploader onUpload={(file) => handleUpload(file, 'right')} label="Upload Right Profile" />
-          {rightProfile && (
-            <div className="mt-4 p-4 bg-gray-50 rounded">
-              <h3 className="font-semibold text-gray-700">Profile Statistics</h3>
-              <p className="text-sm text-gray-600">Total Duration: {rightProfile.totalDuration.toFixed(2)}ms</p>
-              <p className="text-sm text-gray-600">Functions: {rightProfile.functions.length}</p>
-            </div>
-          )}
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <h1 className="text-3xl font-bold text-gray-800">CPU Profile Comparator</h1>
+          <p className="text-gray-600 mt-1">Compare CPU profiles side-by-side • Parents at top, children at bottom</p>
         </div>
       </div>
 
-      {comparison && (
-        <div className="mb-8">
-          <ComparisonPanel comparison={comparison} />
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        
+        {/* Upload Section - Compact */}
+        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Upload Profiles</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <FileUploader onUpload={(file) => handleUpload(file, 'left')} label="Left Profile (Baseline)" />
+              {leftProfile && (
+                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                  ✅ <strong>{leftProfile.totalDuration.toFixed(2)}ms</strong> • {leftProfile.functions.length} functions
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-3">
+              <FileUploader onUpload={(file) => handleUpload(file, 'right')} label="Right Profile (Comparison)" />
+              {rightProfile && (
+                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                  ✅ <strong>{rightProfile.totalDuration.toFixed(2)}ms</strong> • {rightProfile.functions.length} functions
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <FlameGraphPanel profile={leftProfile} title="Left Profile" />
+        {/* Flame Graphs - Fixed Height Side by Side */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <FlameGraphPanel profile={leftProfile} title="Left Profile (Baseline)" />
+          </div>
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <FlameGraphPanel profile={rightProfile} title="Right Profile (Comparison)" />
+          </div>
         </div>
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <FlameGraphPanel profile={rightProfile} title="Right Profile" />
-        </div>
+
+        {/* Comparison Results */}
+        {comparison && (
+          <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+            <ComparisonPanel comparison={comparison} />
+          </div>
+        )}
+
+        {/* Quick Help - Only show when no profiles loaded */}
+        {!leftProfile && !rightProfile && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-blue-800 mb-3">🚀 Getting Started</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-blue-700">
+              <div>
+                <h4 className="font-semibold mb-2">Supported Formats:</h4>
+                <ul className="space-y-1">
+                  <li>• Chrome DevTools CPU profiles (.cpuprofile)</li>
+                  <li>• React Native/Hermes profiles</li>
+                  <li>• V8 profiler output</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2">How to Use:</h4>
+                <ul className="space-y-1">
+                  <li>• Upload your baseline profile on the left</li>
+                  <li>• Upload comparison profile on the right</li>
+                  <li>• Top = High-level functions, Bottom = Details</li>
+                  <li>• Click segments to zoom, right-click to zoom out</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -174,7 +174,8 @@ function buildFlameGraphFromTraceData(functionMap: Map<string, FunctionData>): a
     
     const children = func.children
       .map(buildNode)
-      .filter(child => child.value > 0 || child.children.length > 0); // Include nodes with time or children
+      .filter(child => child.value > 0 || child.children.length > 0) // Include nodes with time or children
+      .sort((a, b) => b.value - a.value); // Sort children by value (largest first)
     
     // Clean up function name for display
     let displayName = func.name;
@@ -187,8 +188,9 @@ function buildFlameGraphFromTraceData(functionMap: Map<string, FunctionData>): a
       }
     }
     
-    // For flame graphs, we want to show self time (time spent in this function, not children)
-    const value = Math.max(0, func.selfTime / 1000); // Convert microseconds to milliseconds
+    // For flame graphs, use total time to show the full hierarchy
+    // This ensures high-level functions appear prominently at the top
+    const value = Math.max(0, func.totalTime / 1000); // Convert microseconds to milliseconds
     
     return {
       name: displayName,
@@ -197,22 +199,44 @@ function buildFlameGraphFromTraceData(functionMap: Map<string, FunctionData>): a
     };
   }
   
+  // Build all root nodes and sort by total time
+  const rootNodes = rootFrames
+    .map(frame => buildNode(frame.id))
+    .filter(child => child.value > 0 || child.children.length > 0)
+    .sort((a, b) => b.value - a.value); // Sort by value (largest first)
+  
   // If single root, return it directly
-  if (rootFrames.length === 1) {
-    const result = buildNode(rootFrames[0].id);
-    console.log('Single root flame graph:', { name: result.name, value: result.value, childrenCount: result.children.length });
+  if (rootNodes.length === 1) {
+    const result = rootNodes[0];
+    console.log('Single root flame graph:', { 
+      name: result.name, 
+      value: result.value, 
+      childrenCount: result.children.length 
+    });
     return result;
   }
   
-  // Multiple roots, create artificial root
-  const rootChildren = rootFrames
-    .map(frame => buildNode(frame.id))
-    .filter(child => child.value > 0 || child.children.length > 0);
+  // Multiple roots - find the largest one as main root
+  if (rootNodes.length > 0) {
+    // If there's a clear main root (much larger than others), use it
+    const mainRoot = rootNodes[0];
+    const secondLargest = rootNodes[1]?.value || 0;
     
+    if (mainRoot.value > secondLargest * 2) {
+      console.log('Using main root:', { 
+        name: mainRoot.name, 
+        value: mainRoot.value, 
+        childrenCount: mainRoot.children.length 
+      });
+      return mainRoot;
+    }
+  }
+  
+  // Multiple significant roots, create artificial root
   const result = {
-    name: 'Root',
+    name: 'Profile Root',
     value: 0,
-    children: rootChildren
+    children: rootNodes
   };
   
   console.log('Multi-root flame graph:', { childrenCount: result.children.length });

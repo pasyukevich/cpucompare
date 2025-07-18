@@ -20,15 +20,21 @@ export default function FlameGraphPanel({ profile, title }: Props) {
         flamegraphData: profile.flamegraphData
       });
 
+      const containerWidth = containerRef.current.clientWidth || 800;
+      
       const flame = flamegraph()
-        .width(containerRef.current.clientWidth || 600)
-        .cellHeight(18)
+        .width(containerWidth)
+        .cellHeight(20)
         .transitionDuration(750)
         .minFrameSize(1)
         .title('')
         .tooltip(true)
         .sort(true)
-        .inverted(false);
+        .inverted(true); // TRUE = Parents at top, children at bottom
+
+      console.log('profile.flamegraphData', profile.flamegraphData);
+      console.log('profile.functions', profile.functions);
+      console.log('flame', flame);
 
       // Clear previous content
       d3.select(containerRef.current).selectAll('*').remove();
@@ -44,6 +50,13 @@ export default function FlameGraphPanel({ profile, title }: Props) {
           .call(flame);
 
         console.log(`Successfully rendered flame graph for ${title}`);
+        
+        // Add custom CSS to improve readability
+        d3.select(containerRef.current)
+          .selectAll('.d3-flame-graph rect')
+          .style('stroke', '#fff')
+          .style('stroke-width', '0.5px');
+          
       } catch (error) {
         console.error('Error rendering flame graph:', error);
         d3.select(containerRef.current)
@@ -76,10 +89,11 @@ export default function FlameGraphPanel({ profile, title }: Props) {
 
   if (!profile) {
     return (
-      <div className="h-64 flex items-center justify-center bg-gray-50 rounded border-2 border-dashed border-gray-300">
+      <div className="h-[600px] flex items-center justify-center bg-gray-50 rounded border-2 border-dashed border-gray-300">
         <div className="text-center">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">{title}</h2>
           <p className="text-gray-500">No profile loaded</p>
+          <p className="text-xs text-gray-400 mt-2">Upload a .cpuprofile file to view the flame graph</p>
         </div>
       </div>
     );
@@ -94,35 +108,66 @@ export default function FlameGraphPanel({ profile, title }: Props) {
         </div>
       </div>
       
-      <div className="bg-white border rounded-lg p-4">
-        <div 
-          ref={containerRef} 
-          className="flame-graph-container"
-          style={{ minHeight: '300px' }}
-        />
+      {/* Instructions */}
+      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-start space-x-2">
+          <div className="text-blue-600 mt-0.5">ℹ️</div>
+          <div className="text-sm text-blue-800">
+            <p className="font-medium">How to navigate:</p>
+            <p>• <strong>Top sections</strong> = High-level parent functions</p>
+            <p>• <strong>Bottom sections</strong> = Detailed child calls</p>
+            <p>• <strong>Click</strong> on any segment to zoom in • <strong>Right-click</strong> to zoom out</p>
+          </div>
+        </div>
       </div>
       
-      <div className="mt-4 text-xs text-gray-500">
-        <p>Click on segments to zoom in, right-click to zoom out</p>
-        <details className="mt-2">
-          <summary className="cursor-pointer">Debug Information</summary>
-          <div className="mt-2 p-2 bg-gray-100 rounded text-black">
-            <p>Total Duration: {profile.totalDuration.toFixed(2)}ms</p>
-            <p>Functions: {profile.functions.length}</p>
-            <p>Top functions by self time:</p>
-            <ul className="ml-4 text-xs">
-              {profile.functions
-                .sort((a, b) => (b.selfTime || 0) - (a.selfTime || 0))
-                .slice(0, 5)
-                .map((func, i) => (
-                  <li key={i}>
-                    {func.name.slice(0, 50)}... - {((func.selfTime || 0) / 1000).toFixed(2)}ms
-                  </li>
-                ))}
-            </ul>
+      {/* Fixed Size Flame Graph Container with Scroll */}
+      <div className="bg-white border rounded-lg">
+        <div className="h-[600px] overflow-auto">
+          <div className="p-4">
+            <div 
+              ref={containerRef} 
+              className="flame-graph-container"
+              style={{ minHeight: '500px', width: '100%' }}
+            />
           </div>
-        </details>
+        </div>
       </div>
+      
+      {/* Debug Information - Collapsible */}
+      <details className="mt-4">
+        <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800">
+          📊 Profile Details & Top Functions
+        </summary>
+        <div className="mt-2 p-3 bg-gray-50 rounded-lg text-sm max-h-64 overflow-y-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 className="font-semibold text-gray-700 mb-2">Profile Statistics</h4>
+              <p>Total Duration: {profile.totalDuration.toFixed(2)}ms</p>
+              <p>Total Functions: {profile.functions.length}</p>
+              <p>Root Function: {profile.flamegraphData?.name || 'Unknown'}</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-700 mb-2">Top Functions by Self Time</h4>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {profile.functions
+                  .sort((a, b) => (b.selfTime || 0) - (a.selfTime || 0))
+                  .slice(0, 8)
+                  .map((func, i) => (
+                    <div key={i} className="text-xs">
+                      <span className="font-mono text-blue-600">
+                        {((func.selfTime || 0) / 1000).toFixed(2)}ms
+                      </span>
+                      <span className="ml-2 text-gray-600">
+                        {func.name.length > 60 ? func.name.slice(0, 60) + '...' : func.name}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
     </div>
   );
 }
